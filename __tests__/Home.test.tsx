@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import Home from "../app/page";
 
 import { aiResponse } from "../app/actions";
@@ -10,6 +10,10 @@ vi.mock("../app/actions", () => ({
 }));
 
 describe("Home page", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("renders the home page component correctly", () => {
     render(<Home />);
 
@@ -43,6 +47,29 @@ describe("Home page", () => {
     await waitFor(() => {
       expect(button).not.toBeDisabled();
       expect(button).toHaveTextContent("Compare");
+    });
+  });
+
+  it("displays responses when the form is submitted", async () => {
+    vi.mocked(aiResponse).mockImplementation((prompt, model) =>
+      Promise.resolve(`Response for ${model}: ${prompt}`)
+    );
+    render(<Home />);
+    const input = screen.getByPlaceholderText("Enter your prompt here");
+    const button = screen.getByRole("button", { name: "Compare" });
+
+    fireEvent.change(input, { target: { value: "Test prompt" } });
+    fireEvent.click(button);
+    await waitFor(() => {
+      expect(
+        screen.getByText("Response for gpt-3.5-turbo: Test prompt")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Response for gpt-4: Test prompt")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Response for gpt-4-turbo: Test prompt")
+      ).toBeInTheDocument();
     });
   });
 });
