@@ -45,7 +45,7 @@ export default function Home() {
             placeholder="Enter your prompt here"
           />
 
-          <Button type="submit" disabled={loading || !prompt}>
+          <Button type="submit" disabled={loading}>
             {loading ? "Generating..." : "Compare"}
           </Button>
         </div>
@@ -53,7 +53,7 @@ export default function Home() {
 
       <div className="grid grid-rows-3 gap-5">
         {models.map((model) => (
-          <Card key={model}>
+          <Card key={model} role="heading" aria-level={2}>
             <CardHeader>
               <CardTitle>{model} says:</CardTitle>
             </CardHeader>
