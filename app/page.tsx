@@ -66,9 +66,9 @@ export default function Home() {
         </div>
       </form>
 
-      <div className="grid grid-rows-3 gap-5">
+      <div className="flex flex-col md:flex-row gap-5">
         {models.map((model) => (
-          <Card key={model} role="heading" aria-level={2}>
+          <Card key={model} role="heading" aria-level={2} className="h-fit">
             <CardHeader>
               <CardTitle>{model} says:</CardTitle>
             </CardHeader>
