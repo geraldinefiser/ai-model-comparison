@@ -72,4 +72,56 @@ describe("Home page", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("handles errors gracefully", async () => {
+    const errorMessage = "API Error Message";
+    vi.mocked(aiResponse).mockRejectedValue(new Error(errorMessage));
+
+    render(<Home />);
+    const input = screen.getByPlaceholderText("Enter your prompt here");
+    const button = screen.getByRole("button", { name: "Compare" });
+
+    fireEvent.change(input, { target: { value: "Test prompt" } });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      const alert = screen.getByRole("alert");
+      expect(alert).toBeInTheDocument();
+      expect(alert).toHaveTextContent("Error");
+      expect(alert).toHaveTextContent(errorMessage);
+    });
+
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveTextContent("Compare");
+
+    const noResponseTexts = screen.getAllByText("No response generated yet.");
+    expect(noResponseTexts).toHaveLength(3);
+
+    expect(aiResponse).toHaveBeenCalledTimes(3);
+  });
+
+  it("clears error when form is submitted again", async () => {
+    const errorMessage = "API Error Message";
+    vi.mocked(aiResponse)
+      .mockRejectedValueOnce(new Error(errorMessage))
+      .mockResolvedValue("Mocked response");
+
+    render(<Home />);
+
+    const input = screen.getByPlaceholderText("Enter your prompt here");
+    const button = screen.getByRole("button", { name: "Compare" });
+
+    fireEvent.change(input, { target: { value: "Test prompt" } });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+    });
+    fireEvent.change(input, { target: { value: "Test prompt" } });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+  });
 });
