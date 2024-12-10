@@ -50,7 +50,7 @@ describe("Home page", () => {
     });
   });
 
-  it("displays responses when the form is submitted", async () => {
+  it("displays all responses when the form is submitted and all api calls respond successfully", async () => {
     vi.mocked(aiResponse).mockImplementation((prompt, model) =>
       Promise.resolve(`Response for ${model}: ${prompt}`)
     );
@@ -71,9 +71,10 @@ describe("Home page", () => {
         screen.getByText("Response for gpt-4-turbo: Test prompt")
       ).toBeInTheDocument();
     });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("handles errors gracefully", async () => {
+  it("handles all API calls failing gracefully", async () => {
     const errorMessage = "API Error Message";
     vi.mocked(aiResponse).mockRejectedValue(new Error(errorMessage));
 
@@ -85,17 +86,16 @@ describe("Home page", () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      const alert = screen.getByRole("alert");
-      expect(alert).toBeInTheDocument();
-      expect(alert).toHaveTextContent("Error");
-      expect(alert).toHaveTextContent(errorMessage);
+      const alerts = screen.getAllByRole("alert");
+      expect(alerts).toHaveLength(3);
+      alerts.forEach((alert) => {
+        expect(alert).toHaveTextContent("Error");
+        expect(alert).toHaveTextContent(errorMessage);
+      });
     });
 
     expect(button).not.toBeDisabled();
     expect(button).toHaveTextContent("Compare");
-
-    const noResponseTexts = screen.getAllByText("No response generated yet.");
-    expect(noResponseTexts).toHaveLength(3);
 
     expect(aiResponse).toHaveBeenCalledTimes(3);
   });
@@ -123,5 +123,33 @@ describe("Home page", () => {
     await waitFor(() => {
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
+  });
+
+  it("handles individual API failure while displaying other successful responses", async () => {
+    const errorMessage = "API error message model 2";
+    vi.mocked(aiResponse)
+      .mockResolvedValueOnce("Mocked response model 1")
+      .mockRejectedValueOnce(new Error(errorMessage))
+      .mockResolvedValueOnce("Mocked response model 3");
+
+    render(<Home />);
+    const input = screen.getByPlaceholderText("Enter your prompt here");
+    const button = screen.getByRole("button", { name: "Compare" });
+
+    fireEvent.change(input, { target: { value: "Test prompt" } });
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(button).not.toBeDisabled();
+      expect(button).toHaveTextContent("Compare");
+    });
+
+    expect(screen.getByText("Mocked response model 1")).toBeInTheDocument();
+    expect(screen.getByText("Mocked response model 3")).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(alert).toBeInTheDocument();
+    expect(alert).toHaveTextContent(errorMessage);
+
+    expect(aiResponse).toHaveBeenCalledTimes(3);
   });
 });
