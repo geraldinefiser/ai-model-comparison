@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
-const models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"];
+const models = ["gpt-3.5-turbo", "gpt-4o-mini", "o1-mini"];
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
